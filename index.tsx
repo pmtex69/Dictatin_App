@@ -49,7 +49,7 @@ class VoiceNotesApp {
 
   constructor() {
     this.genAI = new GoogleGenAI({
-      apiKey: process.env.API_KEY!,
+      apiKey: process.env.GEMINI_API_KEY!,
       apiVersion: 'v1alpha',
     });
 
