@@ -7,7 +7,7 @@
 import {GoogleGenAI} from '@google/genai';
 import {marked} from 'marked';
 
-const MODEL_NAME = 'gemini-2.5-flash-preview-04-17';
+const MODEL_NAME = 'gemini-2.5-flash';
 
 interface Note {
   id: string;
@@ -17,7 +17,7 @@ interface Note {
 }
 
 class VoiceNotesApp {
-  private genAI: any;
+  private genAI: GoogleGenAI;
   private mediaRecorder: MediaRecorder | null = null;
   private recordButton: HTMLButtonElement;
   private recordingStatus: HTMLDivElement;
@@ -49,8 +49,7 @@ class VoiceNotesApp {
 
   constructor() {
     this.genAI = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY!,
-      apiVersion: 'v1alpha',
+      apiKey: process.env.API_KEY!,
     });
 
     this.recordButton = document.getElementById(
@@ -554,14 +553,14 @@ class VoiceNotesApp {
     try {
       this.recordingStatus.textContent = 'Getting transcription...';
 
-      const contents = [
-        {text: 'Generate a complete, detailed transcript of this audio.'},
-        {inlineData: {mimeType: mimeType, data: base64Audio}},
-      ];
-
       const response = await this.genAI.models.generateContent({
         model: MODEL_NAME,
-        contents: contents,
+        contents: {
+          parts: [
+            {text: 'Generate a complete, detailed transcript of this audio.'},
+            {inlineData: {mimeType: mimeType, data: base64Audio}},
+          ],
+        },
       });
 
       const transcriptionText = response.text;
@@ -631,16 +630,15 @@ class VoiceNotesApp {
 
                     Raw transcription:
                     ${this.rawTranscription.textContent}`;
-      const contents = [{text: prompt}];
 
       const response = await this.genAI.models.generateContent({
         model: MODEL_NAME,
-        contents: contents,
+        contents: prompt,
       });
       const polishedText = response.text;
 
       if (polishedText) {
-        const htmlContent = marked.parse(polishedText);
+        const htmlContent = await marked.parse(polishedText);
         this.polishedNote.innerHTML = htmlContent;
         if (polishedText.trim() !== '') {
           this.polishedNote.classList.remove('placeholder-active');
